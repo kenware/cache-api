@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 require('dotenv').config();
 import route from './server/routes/index';
 import config from './server/config';
+import Logger from 'logger-nodejs';
+const log = new Logger();
 
 const app = express();
 
@@ -18,20 +20,19 @@ app.use(express.urlencoded({
 import './server/models/Cashe';
 
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :response-time ms'));
-console.log(process.env.NODE_ENV)
 try {
     mongoose.connect(config.mongoConnectionString, { 
         useUnifiedTopology: true,
         useNewUrlParser: true
     })
 }catch(error) {
- console.log(error)
+ log.info(error)
 }
 
 app.use('/api/v1', route);
 app.use('*', (req, res) => res.status(404).json('Not Found'));
 app.listen(process.env.PORT || '5000', () => {
-  console.log('server is running');
+    log.info('server is running');
 });
 
 export default app;
