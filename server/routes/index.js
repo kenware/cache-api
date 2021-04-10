@@ -8,7 +8,7 @@ const Middleware = new CacheMiddleware()
 
 // add a key and a random content
 router.post(
-    '/cache/add',
+    '/cache/create',
     Middleware.validateCreateUpdate,
     Cashe.createOrUpdate
 );
@@ -30,17 +30,17 @@ router.put(
     Cashe.createOrUpdate
 );
 
+// delete all key in the cache
+router.delete(
+    '/cache/keys',
+    Cashe.deleteAll
+);
+
 // delete a key in the cache
 router.delete(
     '/cache/:key',
     Middleware.validateOne,
     Cashe.deleteKey
-);
-
-// delete all key in the cache
-router.delete(
-    '/cache/keys',
-    Cashe.deleteAll
 );
 
 export default router;

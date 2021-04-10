@@ -18,7 +18,7 @@ app.use(express.urlencoded({
 import './server/models/Cashe';
 
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :response-time ms'));
-
+console.log(process.env.NODE_ENV)
 try {
     mongoose.connect(config.mongoConnectionString, { 
         useUnifiedTopology: true,
@@ -33,3 +33,5 @@ app.use('*', (req, res) => res.status(404).json('Not Found'));
 app.listen(process.env.PORT || '5000', () => {
   console.log('server is running');
 });
+
+export default app;

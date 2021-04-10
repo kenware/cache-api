@@ -1,3 +1,5 @@
+import errorHandler from '../utils/errorHandler';
+
 export default class CacheMiddleware {
     // eslint-disable-next-line consistent-return
     validateCreateUpdate(req, res, next) {
@@ -7,7 +9,7 @@ export default class CacheMiddleware {
           key = req.params.key; // for update existing key
         }
 
-        if (!key) return res.status(400).json('key field is required')
+        if (!key) errorHandler(res, 'key field is required', 400);
 
         req.key = key;
       
@@ -17,7 +19,7 @@ export default class CacheMiddleware {
     validateOne(req, res, next) {
       let { key } = req.params;
 
-      if (!key) return res.status(400).json('key field is required');
+      if (!key) return errorHandler(res, 'key field is required', 400);
     
       next();
   }

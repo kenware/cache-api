@@ -2,12 +2,17 @@
 import mongoose from 'mongoose';
 import Cashe from '../models/Cashe';
 import MemCache from 'memory-cache';
-import generateString from '../utils';
+import generateString from '../utils/utils';
 import config from '../config';
+import responseHandler from '../utils/responseHandler';
+import Logger from 'logger-nodejs';
+const log = new Logger();
 
 const CasheModel = mongoose.model('Cashe');
 
-
+/*
+  CasheController
+ */
 export default class CasheController {
   async createOrUpdate(req, res) {
     try {
@@ -17,11 +22,20 @@ export default class CasheController {
 
       const cacheExist = await CasheModel.findOne({key})
       if (!cacheExist) {
+        // Check for max cache entries
+        // if the max cache entry is greater than the one set on config
+        // delete the first entry added on the list of entries
+        if (MemCache.memsize() > config.maxCacheEntry) {
+          const keyToDelete = MemCache.keys()[0];
+          MemCache.del(keyToDelete)
+          await CasheModel.findOne({key: keyToDelete}).deleteOne().exec()
+        }
         await new CasheModel({ key, content}).save()
+        
       }else {
         await CasheModel.updateOne({key}, { content }, { upsert: true });
       }
-      return res.status(201).json(content);
+      return responseHandler(res, content, 201)
     } catch (err) {
       return res.status(500).json(err);
     }
@@ -31,14 +45,13 @@ export default class CasheController {
     try{
       const { key } = req.params;
       let content = MemCache.get(key)
-      console.log(content)
       if (content) {
-        console.log('Cache hit')
+        log.info('Cache hit')
         // refresh TTL
         MemCache.put(key, content, config.TTL * 1000)
-        return res.status(200).json(content);
+        return responseHandler(res, content, 200);
       }else {
-        console.log('Cache miss')
+        log.info('Cache miss')
         content = generateString(key)
         const cacheExist = await CasheModel.findOne({key})
 
@@ -49,7 +62,7 @@ export default class CasheController {
         }
 
         MemCache.put(key, content, config.TTL * 1000)
-        return res.status(400).json(content);
+        return responseHandler(res, content, 200);
       }
     } catch (err) {
       return res.status(500).json(err);
@@ -69,7 +82,7 @@ export default class CasheController {
           }
         })
       }
-      return res.status(200).json(keys);
+      return responseHandler(res, keys, 200);
     } catch (err) {
       return res.status(500).json(err);
     }
@@ -82,7 +95,7 @@ export default class CasheController {
       if (exist) {
         MemCache.del(key);
       }
-      await CasheModel.findOne({key}).remove().exec()
+      await CasheModel.findOne({key}).deleteOne().exec()
       return res.status(204).json();
     } catch (err) {
       return res.status(500).json(err);
@@ -91,8 +104,7 @@ export default class CasheController {
 
   async deleteAll(req, res) {
     MemCache.clear()
-    await CasheModel.remove({})
+    await CasheModel.deleteMany({})
     return res.status(204).json();
   }
-
   }
